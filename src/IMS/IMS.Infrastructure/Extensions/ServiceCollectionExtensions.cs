@@ -1,9 +1,9 @@
 ﻿using System.Text;
+using IMS.Infrastructure.DbContexts;
 using IMS.Infrastructure.Membership;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 
 namespace IMS.Infrastructure.Extensions;
 
@@ -40,29 +40,12 @@ public static class ServiceCollectionExtensions
 
         services.AddRazorPages();
     }
-    public static void AddJwtAuthentication(this IServiceCollection services,
-        string key, string issuer, string audience)
+    public static void AddJwtAuthentication(this IServiceCollection services)
     {
         services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;})
-            .AddJwtBearer(options =>
-            {
-                options.IncludeErrorDetails = true;
-                options.TokenValidationParameters = new TokenValidationParameters()
-                {
-                    ClockSkew = TimeSpan.Zero,
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = issuer,
-                    ValidAudience = audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(key)
-                    ),
-                };
-            });
+            .AddJwtBearer();
     }
 }

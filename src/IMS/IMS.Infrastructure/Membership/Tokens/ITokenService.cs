@@ -2,6 +2,6 @@
 
 public interface ITokenService
 {
-    Task<string> CreateTokenAsync(AppUser user);
+    Task<TokenResponse> CreateTokenAsync(AppUser user);
     Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request);
 }

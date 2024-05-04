@@ -2,7 +2,7 @@
 
 namespace IMS.Infrastructure.Membership.Tokens;
 
-public class JwtSettings : IValidatableObject
+public class JwtOptions : IValidatableObject
 {
     public string Key { get; set; } = string.Empty;
 

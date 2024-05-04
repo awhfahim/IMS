@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IMS.Infrastructure.Membership;
 
-public class AppUser : IdentityUser
+public class AppUser : IdentityUser<Guid>
 {
     public Role Role { get; set; }
     public string? RefreshToken { get; set; }

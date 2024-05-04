@@ -2,7 +2,7 @@
 
 namespace IMS.Infrastructure.Membership;
 
-public class AppRole : IdentityRole
+public class AppRole : IdentityRole<Guid>
 {
     
 }

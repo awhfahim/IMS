@@ -1,10 +1,12 @@
+using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using IMS.Api;
+using IMS.Api.OptionsSetup;
 using IMS.Application;
 using IMS.Infrastructure;
+using IMS.Infrastructure.DbContexts;
 using IMS.Infrastructure.Extensions;
-using IMS.Infrastructure.Membership.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -69,13 +71,25 @@ try
             }
         });
     });
-
+    
+    var connectionString = configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string is missing");
+    
+    var migrationAssembly = Assembly.GetExecutingAssembly().FullName;
+    
     builder.Services.AddDbContext<ApplicationDbContext>(
-        options => options.UseInMemoryDatabase("AppDb"));
+        options => options.UseSqlServer(connectionString,
+            m => m.MigrationsAssembly(migrationAssembly)));
+    
+    //Use InMemory Database
+    // builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    //     options.UseInMemoryDatabase("appdb"));
+
     //Add JWT
-    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtTokenSettings"));
-    builder.Services.AddJwtAuthentication(builder.Configuration["JwtTokenSettings:Key"]!, builder.Configuration["JwtTokenSettings:ValidIssuer"]!,
-        builder.Configuration["JwtTokenSettings:ValidAudience"]!);
+    builder.Services.ConfigureOptions<JwtOptionsSetup>();
+    builder.Services.AddJwtAuthentication();
+    builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
+    
     
 
 //Add Api Endpoints

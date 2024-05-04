@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using IMS.Domain.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,11 +11,12 @@ using Microsoft.IdentityModel.Tokens;
 namespace IMS.Infrastructure.Membership.Tokens;
 
 public class TokenService(ILogger<TokenService> logger,
-    UserManager<AppUser> userManager, IOptions<JwtSettings> jwtsettings) : ITokenService
+    UserManager<AppUser> userManager, IOptions<JwtOptions> jwtOptions) : ITokenService
 {
     private const int ExpirationMinutes = 30;
+    private JwtOptions JwtOptionsValue => jwtOptions.Value;
 
-    public async Task<string> CreateTokenAsync(AppUser user)
+    public async Task<TokenResponse> CreateTokenAsync(AppUser user)
     {
         var expiration = DateTime.UtcNow.AddMinutes(ExpirationMinutes);
         var token = await CreateJwtTokenAsync(
@@ -22,11 +24,23 @@ public class TokenService(ILogger<TokenService> logger,
             CreateSigningCredentials(),
             expiration
         );
+        
         var tokenHandler = new JwtSecurityTokenHandler();
-        
+        var jwtToken = tokenHandler.WriteToken(token);
+
         logger.LogInformation("JWT Token created");
-        
-        return tokenHandler.WriteToken(token);
+
+        // Generate refresh token and set its expiry time
+        var refreshToken = GenerateRefreshToken();
+        var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(1);
+
+        // Update user with refresh token and its expiry time
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
+        await userManager.UpdateAsync(user);
+
+        // Return TokenResponse with JWT token, refresh token, and expiry time
+        return new TokenResponse(jwtToken, refreshToken, refreshTokenExpiryTime);
     }
 
     public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
@@ -36,13 +50,13 @@ public class TokenService(ILogger<TokenService> logger,
         var user = await userManager.FindByEmailAsync(userEmail!);
         if (user is null)
         {
-            //throw new UnauthorizedException(_t["Authentication Failed."]);
+            throw new UnauthorizedException("Authentication Failed.");
         }
 
-        // if (user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-        // {
-        //     //throw new UnauthorizedException(_t["Invalid Refresh Token."]);
-        // }
+        if (user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            throw new UnauthorizedException("Invalid Refresh Token.");
+        }
 
         return await GenerateTokensAndUpdateUser(user);
     }
@@ -52,7 +66,7 @@ public class TokenService(ILogger<TokenService> logger,
         var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtsettings.Value.Key)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtOptionsValue.Key)),
             ValidateIssuer = false,
             ValidateAudience = false,
             RoleClaimType = ClaimTypes.Role,
@@ -66,21 +80,21 @@ public class TokenService(ILogger<TokenService> logger,
                 SecurityAlgorithms.HmacSha256,
                 StringComparison.InvariantCultureIgnoreCase))
         {
-            //throw new UnauthorizedException(_t["Invalid Token."]);
+            throw new UnauthorizedException("Invalid Token.");
         }
 
         return principal;
     }
     private async Task<TokenResponse> GenerateTokensAndUpdateUser(AppUser user)
     {
-        var token = await CreateTokenAsync(user);
+        var tokenResponse = await CreateTokenAsync(user);
 
         user.RefreshToken = GenerateRefreshToken();
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1);
 
         await userManager.UpdateAsync(user);
 
-        return new TokenResponse(token, user.RefreshToken, user.RefreshTokenExpiryTime);
+        return new TokenResponse(tokenResponse.Token, user.RefreshToken, user.RefreshTokenExpiryTime);
     }
     
     private static string GenerateRefreshToken()
@@ -93,8 +107,8 @@ public class TokenService(ILogger<TokenService> logger,
     private async Task<JwtSecurityToken> CreateJwtTokenAsync(IEnumerable<Claim> claims, SigningCredentials credentials,
         DateTime expiration) =>
         new(
-            jwtsettings.Value.ValidIssuer,
-            jwtsettings.Value.ValidAudience,
+            JwtOptionsValue.ValidIssuer,
+            JwtOptionsValue.ValidAudience,
             claims,
             expires: expiration,
             signingCredentials: credentials
@@ -102,7 +116,7 @@ public class TokenService(ILogger<TokenService> logger,
 
     private IEnumerable<Claim> CreateClaims(AppUser user)
     {
-        var jwtSub = jwtsettings.Value.JwtRegisteredClaimNamesSub;
+        var jwtSub = JwtOptionsValue.JwtRegisteredClaimNamesSub;
         
         try
         {
@@ -111,7 +125,7 @@ public class TokenService(ILogger<TokenService> logger,
                 new Claim(JwtRegisteredClaimNames.Sub, jwtSub),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
@@ -128,8 +142,7 @@ public class TokenService(ILogger<TokenService> logger,
 
     private SigningCredentials CreateSigningCredentials()
     {
-        var symmetricSecurityKey = jwtsettings.Value.Key;
-        
+        var symmetricSecurityKey = JwtOptionsValue.Key;
         
         return new SigningCredentials(
             new SymmetricSecurityKey(
