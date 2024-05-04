@@ -3,12 +3,14 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using IMS.Domain.Exceptions;
+using IMS.Infrastructure.Membership;
+using IMS.Infrastructure.Membership.Tokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace IMS.Infrastructure.Membership.Tokens;
+namespace IMS.Infrastructure.Tokens;
 
 public class TokenService(ILogger<TokenService> logger,
     UserManager<AppUser> userManager, IOptions<JwtOptions> jwtOptions) : ITokenService
@@ -115,40 +117,20 @@ public class TokenService(ILogger<TokenService> logger,
         );
 
     private IEnumerable<Claim> CreateClaims(AppUser user)
-    {
-        var jwtSub = JwtOptionsValue.JwtRegisteredClaimNamesSub;
-        
-        try
+        => new List<Claim>
         {
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, jwtSub),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
-            };
-            
-            return claims;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-    }
+            new (JwtRegisteredClaimNames.Sub, JwtOptionsValue.JwtRegisteredClaimNamesSub),
+            new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new (JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
+            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new (ClaimTypes.Name, user.UserName),
+            new (ClaimTypes.Email, user.Email),
+            new (ClaimTypes.Role, user.Role.ToString())
+        };
 
     private SigningCredentials CreateSigningCredentials()
-    {
-        var symmetricSecurityKey = JwtOptionsValue.Key;
-        
-        return new SigningCredentials(
-            new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(symmetricSecurityKey)
-            ),
+        => new(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtOptionsValue.Key)),
             SecurityAlgorithms.HmacSha256
         );
-    }
 }

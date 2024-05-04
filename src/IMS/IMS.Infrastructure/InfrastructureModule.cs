@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using IMS.Infrastructure.DbContexts;
-using IMS.Infrastructure.Membership.Tokens;
+using IMS.Infrastructure.Tokens;
 
 namespace IMS.Infrastructure;
 

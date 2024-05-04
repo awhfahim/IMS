@@ -1,4 +1,7 @@
-﻿namespace IMS.Infrastructure.Membership.Tokens;
+﻿using IMS.Infrastructure.Membership;
+using IMS.Infrastructure.Membership.Tokens;
+
+namespace IMS.Infrastructure.Tokens;
 
 public interface ITokenService
 {

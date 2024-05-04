@@ -1,5 +1,6 @@
 using IMS.Infrastructure.Membership;
 using IMS.Infrastructure.Membership.Tokens;
+using IMS.Infrastructure.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS.Api.Controllers
