@@ -37,8 +37,6 @@ public static class ServiceCollectionExtensions
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
             options.User.RequireUniqueEmail = true;
         });
-
-        services.AddRazorPages();
     }
     public static void AddJwtAuthentication(this IServiceCollection services)
     {

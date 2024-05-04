@@ -1,8 +1,10 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using FluentValidation.AspNetCore;
 using IMS.Api;
 using IMS.Api.OptionsSetup;
+using IMS.Api.Validators.DIExtensionsForFluentValidator;
 using IMS.Application;
 using IMS.Infrastructure;
 using IMS.Infrastructure.DbContexts;
@@ -90,16 +92,20 @@ try
     builder.Services.AddJwtAuthentication();
     builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
     
+    //Add FluentValidation
+    builder.Services.AddFluentValidationAutoValidation(s => s.DisableDataAnnotationsValidation = false)
+        .AddFluentValidationClientsideAdapters();
+    builder.Services.AddFluentValidationServices();
     
 
-//Add Api Endpoints
-//builder.Services.AddIdentityApiEndpoints<AppUser>()
+    //Add Api Endpoints
+    //builder.Services.AddIdentityApiEndpoints<AppUser>()
     // .AddEntityFrameworkStores<ApplicationDbContext>();
     builder.Services.AddIdentity();
 
     var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+    // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
@@ -111,7 +117,7 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-//app.MapGroup("/account").MapIdentityApi<AppUser>();
+    //app.MapGroup("/account").MapIdentityApi<AppUser>();
 
     app.Run();
 }
