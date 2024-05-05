@@ -60,7 +60,16 @@ namespace IMS.Api.Controllers
             }
 
             var accessToken = await tokenService.CreateTokenAsync(managedUser);
-        
+            
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(30),
+            };
+            Response.Cookies.Append("access_token", accessToken.Token, cookieOptions);
+            
             return Ok(new AuthResponse
             {
                 Email = managedUser.Email,
