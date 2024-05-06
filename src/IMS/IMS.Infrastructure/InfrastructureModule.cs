@@ -1,7 +1,9 @@
 ﻿using Autofac;
 using IMS.Application;
 using IMS.Domain;
+using IMS.Domain.Repositories;
 using IMS.Infrastructure.DbContexts;
+using IMS.Infrastructure.Repositories;
 using IMS.Infrastructure.Tokens;
 using IMS.Infrastructure.UnitOfWorks;
 
@@ -19,6 +21,9 @@ public class InfrastructureModule : Module
             .InstancePerLifetimeScope();
 
         builder.RegisterType<ApplicationUnitOfWork>().As<IApplicationUnitOfWork>()
+            .InstancePerLifetimeScope();
+        
+        builder.RegisterType<ProductRepository>().As<IProductRepository>()
             .InstancePerLifetimeScope();
         
         base.Load(builder);

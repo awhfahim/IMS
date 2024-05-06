@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace IMS.Domain.Repositories
 {
-    public interface IRepositoryBase<TEntity, TKey>
+    public interface IRepositoryBase<TEntity, in TKey>
         where TEntity : class, IEntity<TKey>
         where TKey : IComparable
     {

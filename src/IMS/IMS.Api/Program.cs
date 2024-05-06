@@ -4,11 +4,13 @@ using Autofac.Extensions.DependencyInjection;
 using FluentValidation.AspNetCore;
 using IMS.Api;
 using IMS.Api.OptionsSetup;
+using IMS.Api.ServiceConfigurations;
 using IMS.Api.Validators.DIExtensionsForFluentValidator;
 using IMS.Application;
 using IMS.Infrastructure;
 using IMS.Infrastructure.DbContexts;
 using IMS.Infrastructure.Extensions;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -97,6 +99,9 @@ try
         .AddFluentValidationClientsideAdapters();
     builder.Services.AddFluentValidationServices();
     
+    //Add Mapster
+    builder.Services.AddMapster();
+    builder.Services.MapsterConfig();
 
     //Add Api Endpoints
     //builder.Services.AddIdentityApiEndpoints<AppUser>()
