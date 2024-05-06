@@ -4,9 +4,5 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IMS.Infrastructure.UnitOfWorks;
 
-public class ApplicationUnitOfWork : UnitOfWork, IApplicationUnitOfWork
-{
-    protected ApplicationUnitOfWork(IApplicationDbContext dbContext) : base((DbContext)dbContext)
-    {
-    }
-}
+public class ApplicationUnitOfWork(IApplicationDbContext dbContext)
+    : UnitOfWork((DbContext)dbContext), IApplicationUnitOfWork;

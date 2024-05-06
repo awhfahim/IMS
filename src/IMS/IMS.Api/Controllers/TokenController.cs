@@ -1,3 +1,4 @@
+using System.Net;
 using IMS.Infrastructure.Membership;
 using IMS.Infrastructure.Membership.Tokens;
 using IMS.Infrastructure.Tokens;
@@ -7,7 +8,7 @@ namespace IMS.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TokenController(ITokenService tokenService) : ControllerBase
+    public class TokenController(ITokenService tokenService) : ApiControllerBase
     {
         [HttpPost("get-token")]
         public async Task<IActionResult> GetTokenAsync([FromBody] AppUser user)
@@ -18,7 +19,7 @@ namespace IMS.Api.Controllers
                 return BadRequest(new { message = "Invalid username or password" });
             }
 
-            return Ok(token);
+            return await SendResponseAsync<TokenResponse, TokenResponse>(HttpStatusCode.OK, token);
         }
         
         [HttpPost("refresh")]

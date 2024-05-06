@@ -20,9 +20,6 @@ public class InfrastructureModule : Module
 
         builder.RegisterType<ApplicationUnitOfWork>().As<IApplicationUnitOfWork>()
             .InstancePerLifetimeScope();
-
-        builder.RegisterType<UnitOfWork>().As<IUnitOfWork>()
-            .InstancePerLifetimeScope();
         
         base.Load(builder);
     }
